@@ -252,15 +252,16 @@ class FarmApp(MDApp):
         self.dialog.open()
     def edit_crop(self,index):
         crop=self.crops[index]
-        self.crop_input.text=crop["name"]
-        self.quantity_input.text=crop["quantity"]
-        self.date_input.text=crop["planting_date"]
-        self.status_input.text=crop["status"]
-        self.last_watered_input.text=crop.get("last_watered","")
-        self.watering_input.text=crop.get("water_every","")
-        self.harvest_input.text=crop.get("harvest_date","")
         self.edit_index=index
-        self.crop_button.text="Update Crop"
+        self.open_add_crop_dialog()
+        self.dialog_crop_input.text=crop["name"]
+        self.dialog_quantity_input.text=crop["quantity"]
+        self.dialog_date_input.text=crop["planting_date"]
+        self.dialog_status_input.text=crop["status"]
+        self.dialog_last_watered_input.text=crop.get("last_watered","")
+        self.dialog_watering_input.text=crop.get("water_every","")
+        self.dialog_harvest_input.text=crop.get("harvest_date","")
+        
 
 FarmApp().run()
 

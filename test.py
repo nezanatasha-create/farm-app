@@ -42,28 +42,7 @@ class FarmApp(MDApp):
             height="50dp"
         )
     
-        self.crop_input= MDTextField(
-            hint_text="Enter crop name"
-        )
-        self.quantity_input=MDTextField(
-            hint_text="Enter quantity of crop"
-        )
-        self.date_input=MDTextField(
-            hint_text="Enter planting date (YYYY-MM-DD)"
-        )
-        self.status_input=MDTextField(
-            hint_text="Status (Planted/Growing/Harvested)"
-        )
-        self.last_watered_input=MDTextField(
-            hint_text="last watered date(YYYY-MM-DD)"
-        )
-        self.watering_input=MDTextField(
-            hint_text="Water every (days)"
-        )
         
-        self.harvest_input=MDTextField(
-            hint_text="Expected harvest date (YYYY-MM-DD)"
-        )
         self.crops_list=MDBoxLayout(
             orientation="vertical",
             size_hint_y=None,
@@ -78,22 +57,85 @@ class FarmApp(MDApp):
         
         self.crop_button=MDRaisedButton(
             text="Add Crop",
-            on_release=self.button_pressed
+            on_release=self.open_add_crop_dialog
         )
         
         layout.add_widget(self.dashboard)
         layout.add_widget(self.watering_label)
-        layout.add_widget(self.crop_input)
-        layout.add_widget(self.quantity_input)
-        layout.add_widget(self.date_input)
-        layout.add_widget(self.status_input)
-        layout.add_widget(self.last_watered_input)
-        layout.add_widget(self.watering_input)
-        layout.add_widget(self.harvest_input)
         layout.add_widget(self.crop_button)
         layout.add_widget(self.scroll)
         self.update_crop_display()
         return layout
+    def open_add_crop_dialog(self,*args):
+        content=MDBoxLayout(
+            orientation="vertical",
+            spacing="10dp",
+            size_hint_y=None,
+            height="500dp"
+        )
+        self.dialog_crop_input= MDTextField(
+            hint_text="Enter crop name"
+        )
+        self.dialog_quantity_input=MDTextField(
+            hint_text="Enter quantity of crop"
+        )
+        self.dialog_date_input=MDTextField(
+            hint_text="Enter planting date (YYYY-MM-DD)"
+        )
+        self.dialog_status_input=MDTextField(
+            hint_text="Status (Planted/Growing/Harvested)"
+        )
+        self.dialog_last_watered_input=MDTextField(
+            hint_text="last watered date(YYYY-MM-DD)"
+        )
+        self.dialog_watering_input=MDTextField(
+            hint_text="Water every (days)"
+        )
+        
+        self.dialog_harvest_input=MDTextField(
+            hint_text="Expected harvest date (YYYY-MM-DD)"
+        )
+        content.add_widget(self.dialog_crop_input)
+        content.add_widget(self.dialog_quantity_input)
+        content.add_widget(self.dialog_date_input)
+        content.add_widget(self.dialog_status_input)
+        content.add_widget(self.dialog_last_watered_input)
+        content.add_widget(self.dialog_watering_input)
+        content.add_widget(self.dialog_harvest_input)
+
+        self.dialog=MDDialog(
+            title="Add crop",
+            type="custom",
+            content_cls=content,
+            buttons=[
+                MDFlatButton(
+                    text="Save",
+                    on_release=lambda x:self.save_from_dialog()
+                ),
+                MDFlatButton(
+                    text="Cancel",
+                    on_release=lambda x:self.dialog.dismiss()
+                )
+            ]
+        )
+        self.dialog.open()
+    def save_from_dialog(self):
+        crop={"name": self.dialog_crop_input.text,
+              "quantity": self.dialog_quantity_input.text,
+              "planting_date":self.dialog_date_input.text,
+              "status":self.dialog_status_input.text,
+              "last_watered":self.dialog_last_watered_input.text,
+              "water_every":self.dialog_watering_input.text,
+              "harvest_date":self.dialog_harvest_input.text}
+        if self.edit_index==None:
+            self.crops.append(crop)
+        else:
+            self.crops[self.edit_index]=crop
+            self.edit_index=None
+            
+        self.save_crops()
+        self.update_crop_display()
+        self.dialog.dismiss()
     def button_pressed(self, button):
         crop={"name": self.crop_input.text,
               "quantity": self.quantity_input.text,
@@ -110,13 +152,13 @@ class FarmApp(MDApp):
             self.crop_button.text="Add Crop"
         self.save_crops()
         self.update_crop_display()
-        self.crop_input.text=""
-        self.quantity_input.text=""
-        self.date_input.text=""
-        self.status_input.text=""
-        self.last_watered_input.text=""
-        self.watering_input.text=""
-        self.harvest_input.text=""
+        #self.crop_input.text=""
+        #self.quantity_input.text=""
+        #self.date_input.text=""
+        #self.status_input.text=""
+        #self.last_watered_input.text=""
+        #self.watering_input.text=""
+        #self.harvest_input.text=""
     def update_dashboard(self):
         total=len(self.crops)
         planted=0

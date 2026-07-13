@@ -25,7 +25,9 @@ class FarmApp(MDApp):
         self.load_crops()
         self.edit_index=None
         layout=MDBoxLayout(
-            orientation="vertical"
+            orientation="vertical",
+            spacing="10dp",
+            padding="10dp"
         )
         self.dashboard=MDLabel(
             text="",
@@ -64,11 +66,14 @@ class FarmApp(MDApp):
         )
         self.crops_list=MDBoxLayout(
             orientation="vertical",
-            size_hint_y=None
+            size_hint_y=None,
+            spacing="10dp"
         )
         self.crops_list.bind(
             minimum_height=self.crops_list.setter("height"))
-        self.scroll=MDScrollView()
+        self.scroll=MDScrollView(
+            size_hint_y=1
+        )
         self.scroll.add_widget(self.crops_list)
         
         self.crop_button=MDRaisedButton(

@@ -233,6 +233,11 @@ class FarmApp(MDApp):
                 size_hint_x=0.2,
                 on_release=lambda button, i=index: self.edit_crop(i)
             )
+            water_button=MDRectangleFlatButton(
+                text="Water",
+                size_hint_x=0.2,
+                on_release=lambda button, i = index:self.mark_watered(i)
+            )
             buttons_layout=MDBoxLayout(
                 orientation="horizontal",
                 spacing="10dp",
@@ -243,6 +248,7 @@ class FarmApp(MDApp):
             buttons_layout.add_widget(details_button)
             buttons_layout.add_widget(edit_button)
             buttons_layout.add_widget(delete_button)
+            buttons_layout.add_widget(water_button)
             row.add_widget(crop_label)
             row.add_widget(buttons_layout)
             self.crops_list.add_widget(row)
@@ -284,6 +290,11 @@ class FarmApp(MDApp):
         self.dialog_last_watered_input.text=crop.get("last_watered","")
         self.dialog_watering_input.text=crop.get("water_every","")
         self.dialog_harvest_input.text=crop.get("harvest_date","")
+    def mark_watered(self,index):
+        today=datetime.today().strftime("%Y-%m-%d")
+        self.crops[index]["last_watered"]=today
+        self.save_crops()
+        self.update_crop_display()
         
 
 FarmApp().run()

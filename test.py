@@ -196,13 +196,16 @@ class FarmApp(MDApp):
         self.crops_list.clear_widgets()
         for index, crop in enumerate(self.crops):
             row=MDBoxLayout(
-                orientation="horizontal",
+                orientation="vertical",
                 size_hint_y=None,
-                height="70dp"
+                height="120dp",
+                padding="10dp",
+                spacing="5dp"
             )
             crop_label=MDLabel(
                 text=(crop['name']+"\nStatus: "+crop.get('status','Unknown')),
-                size_hint_x=0.5)
+                size_hint_y=None,
+                height="50dp")
             details_button=MDRectangleFlatButton(
                 text="View Details",
                 size_hint_x=0.2,
@@ -218,10 +221,18 @@ class FarmApp(MDApp):
                 size_hint_x=0.2,
                 on_release=lambda button, i=index: self.edit_crop(i)
             )
+            buttons_layout=MDBoxLayout(
+                orientation="horizontal",
+                spacing="10dp",
+                size_hint_y=None,
+                height="40dp"
+
+            )
+            buttons_layout.add_widget(details_button)
+            buttons_layout.add_widget(edit_button)
+            buttons_layout.add_widget(delete_button)
             row.add_widget(crop_label)
-            row.add_widget(details_button)
-            row.add_widget(edit_button)
-            row.add_widget(delete_button)
+            row.add_widget(buttons_layout)
             self.crops_list.add_widget(row)
             self.update_dashboard()
     def delete_crop(self,index):

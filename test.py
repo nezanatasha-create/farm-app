@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timedelta
 from kivymd.app import MDApp
 from kivymd.uix.textfield import MDTextField
 from kivymd.uix.button import MDRaisedButton
@@ -182,12 +183,23 @@ class FarmApp(MDApp):
         self.update_watering_status()
     def update_watering_status(self):
         needs_water=[]
+        today=datetime.today().date()
+
         for crop in self.crops:
-            if crop.get("water_every",""):
-                needs_water.append(crop['name'])
+            try:
+                last_watered=datetime.strptime(
+                    crop["last_watered"],
+                    "%Y-%m-%d"
+                ).date()
+                water_every=int(crop["water_every"])
+                next_watering=last_watered+timedelta(days=water_every)
+                if today>=next_watering:
+                    needs_water.append(crop["name"])
+            except:
+                pass
         if needs_water:
             self.watering_label.text=(
-                "Check watering:\n"+
+                "Water today:\n"+
                 ",".join(needs_water))
         else:
             self.watering_label.text="No watering reminders"       
@@ -203,7 +215,7 @@ class FarmApp(MDApp):
                 spacing="5dp"
             )
             crop_label=MDLabel(
-                text=(crop['name']+"\nStatus: "+crop.get('status','Unknown')),
+                text=(crop['name']+"\nStatus: "+crop.get('status','Unknown'))+"\nQuantity: "+crop.get("quantity","Unknown"),
                 size_hint_y=None,
                 height="50dp")
             details_button=MDRectangleFlatButton(

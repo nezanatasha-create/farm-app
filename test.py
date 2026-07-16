@@ -30,19 +30,63 @@ class FarmApp(MDApp):
             spacing="10dp",
             padding="10dp"
         )
+        self.dashboard_layout=MDBoxLayout(
+            orientation="vertical",
+            size_hint_y=None,
+            height="120dp",
+            spacing="5dp"
+        )
         self.dashboard=MDLabel(
             text="",
             halign="center",
-            size_hint_y=None,
-            height="90dp"
+            
         )
+        self.dashboard_layout.add_widget(self.dashboard)
+    
         self.watering_label=MDLabel(
             text="",
             halign="center",
             size_hint_y=None,
             height="50dp"
         )
-    
+        self.filter_layout=MDBoxLayout(
+            orientation="horizontal",
+            spacing="10dp",
+            size_hint_x=None,
+            size_hint_y=None,
+            height="50dp"
+        )
+        self.filter_layout.bind(
+            minimum_width=self.filter_layout.setter("width")
+        )
+        self.filter_scroll=MDScrollView(
+            do_scroll_y=False,
+            size_hint_y=None,
+            height="50dp"
+        )
+        self.filter_scroll.add_widget(self.filter_layout)
+        all_button=MDRectangleFlatButton(
+            text="All",
+            on_release=lambda x: self.set_filter("all")
+        )
+        water_button=MDRectangleFlatButton(
+            text="Needs Water",
+            on_release=lambda x:self.set_filter("water")
+        )
+        planted_button=MDRectangleFlatButton(
+            text="Planted",
+            on_release=lambda x: self.set_filter("planted")
+        )
+        growing_button=MDRectangleFlatButton(
+            text="Growing",
+            on_release=lambda x: self.set_filter("growing")
+        )
+        harvested_button=MDRectangleFlatButton(
+            text="Harvested",
+            on_release=lambda x: self.set_filter("harvested")
+        )
+
+        self.current_filter="all"
         
         self.crops_list=MDBoxLayout(
             orientation="vertical",
@@ -61,12 +105,23 @@ class FarmApp(MDApp):
             on_release=self.open_add_crop_dialog
         )
         
-        layout.add_widget(self.dashboard)
+
+        self.filter_layout.add_widget(all_button)
+        self.filter_layout.add_widget(water_button)
+        self.filter_layout.add_widget(growing_button)
+        self.filter_layout.add_widget(planted_button)
+        self.filter_layout.add_widget(harvested_button)
+
+        layout.add_widget(self.dashboard_layout)
         layout.add_widget(self.watering_label)
+        layout.add_widget(self.filter_scroll)
         layout.add_widget(self.crop_button)
         layout.add_widget(self.scroll)
         self.update_crop_display()
         return layout
+    def set_filter(self,filter_name):
+        self.current_filter=filter_name
+        self.update_crop_display()
     def open_add_crop_dialog(self,*args):
         content=MDBoxLayout(
             orientation="vertical",
@@ -165,6 +220,7 @@ class FarmApp(MDApp):
         planted=0
         growing=0
         harvested=0
+        harvest_soon=len(self.get_crops_harvesting_soon())
         for crop in self.crops:
             status=crop.get('status','').lower()
             if status=="planted":
@@ -173,18 +229,19 @@ class FarmApp(MDApp):
                 growing+=1
             elif status=="harvested":
                 harvested+=1 
+        needs_water= len(self.get_crops_needing_water())
         self.dashboard.text=(
             f"Total crops: {total}\n"
             f"Planted: {planted}\n"
             f"Growing: {growing}\n"
-            f"harvested: {harvested}\n"
-            
+            f"Harvested: {harvested}\n"
+            f"Need water: {needs_water}\n"
+            f"Harvest soon: {harvest_soon}"
         )
         self.update_watering_status()
-    def update_watering_status(self):
+    def get_crops_needing_water(self):
         needs_water=[]
         today=datetime.today().date()
-
         for crop in self.crops:
             try:
                 last_watered=datetime.strptime(
@@ -197,27 +254,87 @@ class FarmApp(MDApp):
                     needs_water.append(crop["name"])
             except:
                 pass
+        return needs_water
+    def get_crops_harvesting_soon(self):
+        harvest_soon=[]
+        today=datetime.today().date()
+        for crop in self.crops:
+            try:
+                harvest_date=datetime.strptime(
+                    crop["harvest_date"],"%Y-%m-%d"
+                ).date()
+                days_left=(harvest_date-today).days
+                if 0 <=days_left<=7:
+                    harvest_soon.append(crop["name"])
+            except:
+                pass
+        return harvest_soon
+    def update_watering_status(self):
+        needs_water=self.get_crops_needing_water()
+        today=datetime.today().date()
+
         if needs_water:
             self.watering_label.text=(
                 "Water today:\n"+
                 ",".join(needs_water))
         else:
             self.watering_label.text="No watering reminders"       
-                  
+    def get_crop_progress(self,crop):
+        try:
+            today=datetime.today().date()
+            planted=datetime.strptime(
+                crop['planting_date'],"%Y-%m-%d"
+            ).date()
+            days_growing=(today-planted).days
+            return f"Growing for: {days_growing} days"
+        except:
+            return "Growing time unavailable"
+    def get_harvest_countdown(self, crop):
+        try:
+            today=datetime.today().date()
+            harvest=datetime.strptime(
+                crop['harvest_date'],"%Y-%m-%d"
+            ).date()
+            days_left=(harvest-today).days
+            if days_left<0:
+                return "Harvest date passed"
+            elif days_left==0:
+                return "Harvest today!"
+            else:
+                return f"Harvest in: {days_left} days"
+        except:
+            return "Harvest date unavailable"
     def update_crop_display(self):
         self.crops_list.clear_widgets()
         for index, crop in enumerate(self.crops):
+            if self.current_filter=="water":
+                if crop['name'] not in self.get_crops_needing_water():
+                    continue
+            elif self.current_filter=="growing":
+                if crop.get("status","").lower() !="growing":
+                    continue
+            elif self.current_filter=="planted":
+                if crop.get("status","").lower()!="planted":
+                    continue
+            elif self.current_filter=="harvested":
+                if crop.get("status","").lower()!="harvested":
+                    continue
             row=MDBoxLayout(
                 orientation="vertical",
                 size_hint_y=None,
-                height="120dp",
+                height="160dp",
                 padding="10dp",
                 spacing="5dp"
             )
             crop_label=MDLabel(
-                text=(crop['name']+"\nStatus: "+crop.get('status','Unknown'))+"\nQuantity: "+crop.get("quantity","Unknown"),
+                text=(crop['name']
+                      +"\nStatus: "
+                      +crop.get('status','Unknown')
+                      +"\nQuantity "
+                      +crop.get("quantity","Unknown")
+                      ), 
                 size_hint_y=None,
-                height="50dp")
+                height="100dp")
             details_button=MDRectangleFlatButton(
                 text="View Details",
                 size_hint_x=0.2,
@@ -239,20 +356,35 @@ class FarmApp(MDApp):
                 on_release=lambda button, i = index:self.mark_watered(i)
             )
             buttons_layout=MDBoxLayout(
+                orientation="vertical",
+                spacing="5dp",
+                size_hint_y=None,
+                height="80dp"
+
+            )
+            top_buttons=MDBoxLayout(
                 orientation="horizontal",
                 spacing="10dp",
                 size_hint_y=None,
                 height="40dp"
-
             )
-            buttons_layout.add_widget(details_button)
-            buttons_layout.add_widget(edit_button)
-            buttons_layout.add_widget(delete_button)
-            buttons_layout.add_widget(water_button)
+            bottom_buttons=MDBoxLayout(
+                orientation="horizontal",
+                spacing="10dp",
+                size_hint_y=None,
+                height="40dp"
+            )
+            top_buttons.add_widget(details_button)
+            top_buttons.add_widget(edit_button)
+            bottom_buttons.add_widget(delete_button)
+            bottom_buttons.add_widget(water_button)
+
+            buttons_layout.add_widget(top_buttons)
+            buttons_layout.add_widget(bottom_buttons)
             row.add_widget(crop_label)
             row.add_widget(buttons_layout)
             self.crops_list.add_widget(row)
-            self.update_dashboard()
+        self.update_dashboard()
     def delete_crop(self,index):
         self.crops.pop(index)
         self.save_crops()
@@ -266,7 +398,10 @@ class FarmApp(MDApp):
             f"Status: {crop.get('status','Unknown')}\n"
             f"Last watered: {crop.get('last_watered','Unknown')}\n"
             f"Water Every: {crop.get('water_every','Unknown')} days\n"
-            f"Harvest date: {crop.get('harvest_date','Unknown')}"
+            f"{self.get_crop_progress(crop)}\n"
+            f"{self.get_harvest_countdown(crop)}\n"
+            f"Harvest date: {crop.get('harvest_date','Unknown')}\n"
+            
         )
         self.dialog= MDDialog(
             title="Crop Details",
